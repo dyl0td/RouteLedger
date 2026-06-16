@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#10243a" />
+    <title>RouteLedger</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main id="welcome" class="screen welcome-screen">
+      <div class="brand-shell">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <p class="kicker">Real estate route tracker</p>
+        <h1 id="welcomeTitle">RouteLedger</h1>
+        <p class="welcome-copy">
+          Track open house signs and completed door drops from one field-ready map.
+        </p>
+        <button id="openMaps" class="primary-action" type="button">
+          <span>Open maps</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </div>
+    </main>
+
+    <main id="mapScreen" class="screen map-screen hidden">
+      <header class="topbar">
+        <button class="icon-button" id="backHome" type="button" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <div class="topbar-title">
+          <strong id="appTitle">RouteLedger</strong>
+          <span id="routeStats">0 signs / 0 drops</span>
+        </div>
+        <button class="icon-button waffle-button" id="toolsButton" type="button" aria-label="Tools menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="6" cy="6" r="1.7" fill="currentColor" />
+            <circle cx="12" cy="6" r="1.7" fill="currentColor" />
+            <circle cx="18" cy="6" r="1.7" fill="currentColor" />
+            <circle cx="6" cy="12" r="1.7" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.7" fill="currentColor" />
+            <circle cx="18" cy="12" r="1.7" fill="currentColor" />
+            <circle cx="6" cy="18" r="1.7" fill="currentColor" />
+            <circle cx="12" cy="18" r="1.7" fill="currentColor" />
+            <circle cx="18" cy="18" r="1.7" fill="currentColor" />
+          </svg>
+        </button>
+      </header>
+
+      <section class="searchbar" aria-label="Map search">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+          <path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <input id="searchInput" type="search" placeholder="Search address or neighborhood" autocomplete="street-address" />
+        <button id="searchButton" type="button">Go</button>
+      </section>
+
+      <section id="searchHistoryPanel" class="search-history hidden" aria-label="Saved searches">
+        <div id="searchHistoryList" class="search-history-list"></div>
+      </section>
+
+      <div id="map" class="map-canvas" aria-label="OpenStreetMap map"></div>
+      <div id="mapFallback" class="map-fallback">
+        <div>
+          <h2>Map loading</h2>
+          <p>This app uses OpenStreetMap with no API key. Check your internet connection if the map does not appear.</p>
+          <button id="fallbackSettings" type="button">Settings</button>
+        </div>
+      </div>
+
+      <aside id="toolsDrawer" class="tools-drawer hidden" aria-label="Map tools">
+        <div class="drawer-head">
+          <h2>Map tools</h2>
+          <button class="icon-button dark" id="closeTools" type="button" aria-label="Close tools">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <button class="tool-action" id="startPinButton" type="button">
+          <span class="tool-icon pin-icon">S</span>
+          <span>
+            <strong>Drop sign pin</strong>
+            <small>Place a movable pin at map center</small>
+          </span>
+        </button>
+
+        <button class="tool-action" id="loadHousesButton" type="button">
+          <span class="tool-icon checkbox-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span>
+            <strong>Add house checkboxes</strong>
+            <small>Find buildings in the current map view</small>
+          </span>
+        </button>
+
+        <button class="tool-action" id="locateButton" type="button">
+          <span class="tool-icon locate-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s7-4.6 7-11a7 7 0 1 0-14 0c0 6.4 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="2" />
+              <circle cx="12" cy="10" r="2.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span>
+            <strong>Locate me</strong>
+            <small>Center the map on your iPhone</small>
+          </span>
+        </button>
+
+        <form id="entryForm" class="entry-form">
+          <label>
+            <span id="entryLabel">Sign label</span>
+            <input id="entryName" type="text" placeholder="Oak + 3rd arrow sign" />
+          </label>
+          <label>
+            <span>Notes</span>
+            <textarea id="entryNotes" rows="2" placeholder="Agent, placement, gate code, pickup note"></textarea>
+          </label>
+        </form>
+
+        <button class="tool-action compact-tool" id="settingsButton" type="button">
+          <span class="tool-icon settings-icon">*</span>
+          <span>
+            <strong>Settings</strong>
+            <small>Business name, map center, import/export</small>
+          </span>
+        </button>
+
+        <div class="progress-card">
+          <div>
+            <span>Door drops</span>
+            <strong id="dropProgress">0 / 0</strong>
+          </div>
+          <div class="progress-track">
+            <span id="progressFill"></span>
+          </div>
+        </div>
+
+        <div class="list-head">
+          <span>Saved</span>
+          <div class="saved-actions">
+            <button id="clearCompleted" type="button">Clear done</button>
+            <button id="clearAll" type="button">Clear all</button>
+          </div>
+        </div>
+        <div id="entryList" class="entry-list"></div>
+      </aside>
+
+      <div id="pinConfirmBar" class="pin-confirm-bar hidden">
+        <button id="cancelPin" type="button">Cancel</button>
+        <button id="confirmPin" type="button">Confirm Pin</button>
+      </div>
+
+      <dialog id="settingsDialog" class="settings-dialog">
+        <form method="dialog" class="settings-card">
+          <div class="dialog-head">
+            <h2>Settings</h2>
+            <button class="icon-button dark" value="cancel" aria-label="Close" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          <label>
+            <span>Business name</span>
+            <input id="businessName" type="text" placeholder="RouteLedger" />
+          </label>
+          <label>
+            <span>Default map center</span>
+            <input id="defaultCenter" type="text" placeholder="San Diego, CA" />
+          </label>
+
+          <div class="settings-actions">
+            <button id="saveSettings" class="primary-action compact" type="button">Save</button>
+            <button id="exportData" type="button">Export</button>
+            <label class="file-action">
+              Import
+              <input id="importData" type="file" accept="application/json" />
+            </label>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="itemDialog" class="item-dialog">
+        <form method="dialog" class="settings-card">
+          <div class="dialog-head">
+            <h2 id="itemDialogTitle">Item</h2>
+            <button class="icon-button dark" value="cancel" aria-label="Close" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+          <label>
+            <span>Name</span>
+            <input id="itemName" type="text" />
+          </label>
+          <label>
+            <span>Notes</span>
+            <textarea id="itemNotes" rows="3"></textarea>
+          </label>
+          <label class="check-row">
+            <input id="itemComplete" type="checkbox" />
+            <span>Completed</span>
+          </label>
+          <div class="settings-actions">
+            <button id="saveItem" class="primary-action compact" type="button">Save</button>
+            <button id="deleteItem" class="danger" type="button">Delete</button>
+          </div>
+        </form>
+      </dialog>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
